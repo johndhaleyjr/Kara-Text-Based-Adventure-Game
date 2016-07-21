@@ -9,15 +9,12 @@
 import java.util.Random;
 import java.util.Scanner;
 
+import java.util.InputMismatchException;
+
 public class Combat{
     private static int evoCD = 0;
     static Random gen = new Random();
-    private int monsterCD;
-    private int poly;
     private int overkill;
-    private boolean isInterrupt;
-    private boolean bigHit;
-    private boolean channelingHit;
     private boolean isBattle;
     private boolean isWin;
     private Monster mob;
@@ -30,15 +27,10 @@ public class Combat{
     public Combat(Player updatedPlayer){
         this.player = updatedPlayer;
         this.playerCoords = player.getCoords();
-        this.monsterCD = 0;
-        this.poly = 0;
         this.overkill = 0;
-        this.isInterrupt = false;
-        this.bigHit = false;
-        this.channelingHit = false;
         this.isBattle = false;
         this.playerStatus = Status.ABLE;
-        this.mob = new Monster(playerCoords);
+        findEnemy();
         this.iRan = false;
     }//End Constructor
     
@@ -48,29 +40,9 @@ public class Combat{
         return this.evoCD;
     }//End getEvoCD
     
-    public int getCD(){
-        return this.monsterCD;
-    }//End getCD
-    
-    public int getPoly(){
-        return this.poly;
-    }//End getPoly
-    
     public int getOverkill(){
         return this.overkill;
     }//end getOverkill
-    
-    public boolean getIsInterrupt(){
-        return this.isInterrupt;
-    }//End getIsInterrupt
-    
-    public boolean getBigHit(){
-        return this.bigHit;
-    }//End getBigHit
-    
-    public boolean getChannelingHit(){
-        return this.channelingHit;
-    }//End getChannelingHit
     
     public boolean getIsBattle(){
         return this.isBattle;
@@ -100,33 +72,9 @@ public class Combat{
         player.setEvoCD(this.evoCD);
     }//End setEvoCD
     
-    public void setMonsterCD(int newCD){
-        this.monsterCD = newCD;
-    }//End setMonsterCD
-    
-    public void setPoly(int newPoly){
-        this.poly = newPoly;
-    }//End setPoly
-    
-    public void setPoly(){
-        this.poly = gen.nextInt(3) + 1;
-    }//End setPoly2
-    
     public void setOverkill(int newOK){
         this.overkill = newOK;
     }//End setOverkill
-    
-    public void setIsInterrupt(boolean newValue){
-        this.isInterrupt = newValue;
-    }//End interrupt
-    
-    public void setBigHit(boolean newValue){
-        this.bigHit = newValue;
-    }//End setBigHit
-    
-    public void setChannelingHit(boolean newValue){
-        this.channelingHit = newValue;
-    }//End setChannelingHit
     
     public void setIsBattle(boolean newValue){
         this.isBattle = newValue;
@@ -212,7 +160,7 @@ public class Combat{
     
     public void menuExecute(int playerChoice){
         int skillLine = mob.getSkillLine();
-        boolean channelingHit = getChannelingHit();
+        boolean channelingHit = mob.getChannelingSpecial();
         
         switch(playerChoice){
             case 1: 
@@ -228,12 +176,23 @@ public class Combat{
                 break;
             
             
-            //Opening spellbook * TODO *
+            //Opening spellbook
             case 2: 
-                player.printSB();
-                input = new Scanner(System.in);
-                int choice = input.nextInt();
-                spellChoice(choice);
+                int choice;
+                do{
+                    player.printSB();
+                    try{
+                        input = new Scanner(System.in);
+                        choice = input.nextInt();
+                        spellChoice(choice);
+                    }catch(InputMismatchException e){
+                        System.out.println();
+                        System.out.println("That was not a command!");
+                        System.out.println();
+                        input.nextLine();
+                        choice = -55;
+                    }
+                }while(choice == -55);
                 
                 break;
             
@@ -276,11 +235,11 @@ public class Combat{
     public void spellChoice(int choice){
         System.out.println();
         int skillLine = mob.getSkillLine();
-        int monsterCD = getCD();
+        int monsterCD = mob.getMonsterCD();
         int spellDamage;
         
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
+        boolean specialHit = mob.getSpecialAttack();
+        boolean channelingHit = mob.getChannelingSpecial();
         
         int playerMana = player.getMana();
         String monsterName = mob.getName();
@@ -289,17 +248,17 @@ public class Combat{
         if((skillLine != 101)||((skillLine == 101)&&(monsterCD == 0))){
             if(choice == 1){
                 System.out.printf("You counterspelled %s, but it drains all of your mana!\n\n", monsterName);
-                setIsInterrupt(true);
-                setBigHit(false);       //Interrupt stops bigHit
-                setChannelingHit(false);
+                mob.setIsInterrupt(true);
+                mob.setSpecialAttack(false);       //Interrupt stops specialHit
+                mob.setChannelingSpecial(false);
                 player.setMana(0);
                 
             }else if(choice == 2){
                 if(playerMana >= 60){
                     System.out.printf("You polymorph %s!\n\n", monsterName);
-                    setPoly(polyRan()); //Randomizes a number between 1-3.
-                    setBigHit(false);
-                    setChannelingHit(false);
+                    mob.setPoly(); //Randomizes a number between 1-3.
+                    mob.setSpecialAttack(false);
+                    mob.setChannelingSpecial(false);
                 }else{
                     System.out.printf("You tried to polymorph %s, but you ran out of mana!\n\n", monsterName);
                 }
@@ -319,10 +278,10 @@ public class Combat{
                 if(playerMana >= 180){
                     System.out.printf("You have entered Ice Block, and cannot be damaged.\n\n");
                     setStatus(Status.ICEBLOCK);//Will not attack next round.
-                    setBigHit(false);//Ice Block stops big hit.
+                    mob.setSpecialAttack(false);//Ice Block stops big hit.
                     //If enemy is not ghost, stop big attack
                     if(skillLine != 1){
-                        setChannelingHit(false);
+                        mob.setChannelingSpecial(false);
                     }
                 }else{
                     System.out.printf("You tried to use Ice Block, but you ran out of mana!\n\n");
@@ -361,17 +320,18 @@ public class Combat{
             }
             if((skillLine == 0)&&(channelingHit == true)){
                 System.out.printf("You couldn't hit a target in the etheral.\n\n");
+                mob.setIsInterrupt(false);
             }
         }else{
             System.out.printf("You are silenced, and thus could not attack!\n\n");
+            mob.setIsInterrupt(false);
         }
     }//end of spellChoice
     
-    public int polyRan(){
-        Random gen = new Random();
-        int polyCount = gen.nextInt(3);
-        return(polyCount + 1);
-    }//end of polyRan;
+    public void monsterHit(){
+        mob.attack(getStatus());
+        setOverkill(player.takeHealth(mob.getSkillMonsterDamage()));
+    }
     
     public void spellChecker(){
         int statMonsterDamage;
@@ -392,326 +352,13 @@ public class Combat{
                 System.out.printf("When you leave Ice Block, you are healed for %d!\n\n", spellDamage);
                 player.giveHealth(spellDamage);
                 setStatus(Status.ABLE);
-                setBigHit(false);
+                mob.setSpecialAttack(false);
                 if(mob.getSkillLine() != 0){
-                    setChannelingHit(false);
+                    mob.setChannelingSpecial(false);
                 }
             }
         }
     }//End spellChecker
-    
-    //Checks to see what skillLine to give the monster.
-    public void skillLineCheck(){
-        //Spectral Ghost & Ghosts
-        int checkSkillLine = mob.getSkillLine();
-        if(checkSkillLine == 0){
-            ghostSkills();
-        }
-        //Spiders
-        if(checkSkillLine == 1){
-            spiderSkills();
-        }
-        //Bats
-        if(checkSkillLine == 2){
-            houndSkills();
-        }
-        
-        //Attumen
-        if(checkSkillLine == 100){
-            attumenBossSkills();
-        }
-        //Rokad
-        if(checkSkillLine == 101){
-            shadikithSkills();
-        }
-    }//End skillLineCheck
-    
-    //The next few methods enable the monsters to attack 
-    private void ghostSkills(){
-        int skillMonsterDamage;
-        int monsterCD = getCD();
-        int poly = getPoly();
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
-        boolean isInterrupt = getIsInterrupt();
-        String monsterName = mob.getName();
-        
-        Status playerStatus = getStatus();
-        
-        if(monsterCD > 0){
-            setMonsterCD(monsterCD - 1);
-        }
-        if((poly <= 0)&&(mob.getHealth() > 0)&&((playerStatus == Status.ABLE)||(playerStatus == Status.CASTING))){
-            if(channelingHit == false){
-                bigHit = bigAttack();//Checking for value.
-            }
-            
-            if((bigHit == false)){
-                if(channelingHit == false){
-                    if(isInterrupt == false){
-                        skillMonsterDamage = mob.getDamage();
-                        System.out.printf("%s haunts you for %d damage!\n\n\n", monsterName, skillMonsterDamage);
-                        player.takeHealth(skillMonsterDamage);
-                    }
-                    if(isInterrupt == true){
-                        System.out.printf("%s could not attack.\n\n\n", monsterName);
-                        setIsInterrupt(false);
-                    }
-                }
-                
-                if(channelingHit == true){
-                    skillMonsterDamage = mob.getDamage() / 2;
-                    System.out.printf("%s haunts you for %d damage!\n\n\n", monsterName, skillMonsterDamage);
-                    player.takeHealth(skillMonsterDamage);
-                }
-            }
-            //Big Attack Hit, has to come before the Big Attack
-            if((channelingHit == true)&&(monsterCD == 0)){
-                System.out.printf("%s has shifted out of the etheral plain.\n\n\n", monsterName);
-                setChannelingHit(false);
-                setBigHit(false);
-            }
-            //Big Attack
-            if(bigHit == true){
-                System.out.printf("%s shifts into the ethereal plain.\n\n\n", monsterName);
-                    setChannelingHit(true);
-                    setBigHit(false);
-                    setMonsterCD(polyRan());
-            }
-        }
-        //If polymorphed, do not allow to hit.
-        if((poly > 0)&&(mob.getHealth() > 0)){
-            System.out.printf("%s was polymorphed and could not attack. Baaa!\n\n\n", monsterName);
-            setPoly(poly - 1);
-        }
-        //If player is iceblocked, do not hit.
-        if(playerStatus == Status.ICEBLOCK){
-        System.out.printf("%s tried to attack you, but you were protected in ice.\n\n\n", monsterName);
-        }
-    }//End of ghostSkills
-        
-    private void attumenBossSkills(){
-        int skillMonsterDamage;
-        int monsterCD = getCD();
-        int poly = getPoly();
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
-        boolean isInterrupt = getIsInterrupt();
-        String monsterName = mob.getName();
-        
-        if((poly <= 0)&&(isInterrupt == false)&&(mob.getHealth() > 0)&&((playerStatus == Status.ABLE)||(playerStatus == Status.CASTING))){
-            if(channelingHit == false){
-                setBigHit(bigAttack());//Checking for value.
-            }
-            
-            if((bigHit == false)&&(channelingHit == false)){
-                skillMonsterDamage = mob.getDamage();
-                System.out.printf("%s attacks you for %d damage!\n\n\n", monsterName, skillMonsterDamage);
-                setOverkill(player.takeHealth(skillMonsterDamage));
-            }
-            //Big Attack Hit, has to come before the Big Attack
-            if(channelingHit == true){
-                System.out.printf("%s strikes you down with the help of his steed, dealing %d damage!\n\n\n", monsterName, 200);
-                setOverkill(player.takeHealth(200));
-                setChannelingHit(false);
-            }
-            //Big Attack
-            if(bigHit == true){
-                    System.out.printf("%s is getting ready for a big attack.\n\n\n", monsterName);
-                    setChannelingHit(true);
-                    setBigHit(false);
-            }
-        }
-        //If interrupted, cancel attack and big hit.
-        if((isInterrupt == true)&&(mob.getHealth() > 0)){
-            System.out.printf("%s could not attack.\n\n\n", monsterName);
-            setIsInterrupt(false);
-            setBigHit(false);
-        }
-        //If polymorphed, do not allow to hit.
-        if((poly > 0)&&(mob.getHealth() > 0)){
-            System.out.printf("%s was polymorphed and could not attack. Baaa!\n\n\n", monsterName);
-            setPoly(poly - 1);
-        }
-        //If player is iceblocked, enemy will not attack.
-        if(playerStatus == Status.ICEBLOCK){
-            System.out.printf("%s tried to attack you, but you were protected in ice.\n\n\n", monsterName);
-        }
-    }//End monsterWillAttack
-    
-    private void spiderSkills(){
-        int skillMonsterDamage;
-        int monsterCD = getCD();
-        int poly = getPoly();
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
-        boolean isInterrupt = getIsInterrupt();
-        String monsterName = mob.getName();
-        
-        if(monsterCD > 0){
-            setMonsterCD(monsterCD - 1);
-        }
-        if((poly <= 0)&&(mob.getHealth() > 0)&&((playerStatus == Status.ABLE)||(playerStatus == Status.CASTING))){
-            if(channelingHit == false){
-                setBigHit(bigAttack());//Checking for value.
-                bigHit = getBigHit();
-            }
-            
-            if((bigHit == false)){
-                if(isInterrupt == false){
-                    skillMonsterDamage = mob.getDamage();
-                    System.out.printf("%s bites you for %d damage!\n", monsterName, skillMonsterDamage);
-                    setOverkill(player.takeHealth(skillMonsterDamage));
-                }
-                if(isInterrupt == true){
-                    System.out.printf("%s could not attack.\n", monsterName);
-                    setIsInterrupt(false);
-                }
-            }
-            //Big Attack Hit, has to come before the Big Attack
-            if((channelingHit == true)&&(monsterCD == 0)){
-                System.out.printf("The poison has been cured.\n");
-                setChannelingHit(false);
-                setBigHit(false);
-            }
-            
-            if((channelingHit == true)&&(monsterCD >= 0)){
-                int poisonDamage = mob.attackDamage(3, 12);
-                System.out.printf("The poison hurts you for %d.", poisonDamage);
-                setOverkill(player.takeHealth(poisonDamage));
-            }
-            
-            //Big Attack
-            if(bigHit == true){
-                System.out.printf("%s's fangs have poisoned you!\n", monsterName);
-                    setChannelingHit(true);
-                    setBigHit(false);
-                    setMonsterCD(3);
-            }
-        }
-        //If polymorphed, do not allow to hit.
-        if((poly > 0)&&(mob.getHealth() > 0)){
-            System.out.printf("%s was polymorphed and could not attack. Baaa!\n", monsterName);
-            setPoly(poly - 1);
-        }
-        //If player is iceblocked, do not hit.
-        if(playerStatus == Status.ICEBLOCK){
-        System.out.printf("%s tried to attack you, but you were protected in ice.\n", monsterName);
-        }
-        System.out.printf("\n\n");
-    }//End of ghostSkills
-    
-    private void houndSkills(){
-        int skillMonsterDamage;
-        int monsterCD = getCD();
-        int poly = getPoly();
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
-        boolean isInterrupt = getIsInterrupt();
-        String monsterName = mob.getName();
-        
-        if((poly <= 0)&&(isInterrupt == false)&&(mob.getHealth() > 0)&&((playerStatus == Status.ABLE)||(playerStatus == Status.CASTING))){
-            setBigHit(bigAttack());//Checking for value.
-            bigHit = getBigHit();
-            
-            skillMonsterDamage = mob.getDamage();
-            System.out.printf("%s scratches you for %d damage!\n\n\n", monsterName, skillMonsterDamage);
-            setOverkill(player.takeHealth(skillMonsterDamage));
-            //Big Attack Hit, has to come before the Big Attack
-            //Big Attack
-            if(bigHit == true){
-                    System.out.printf("%s's pups come charging in!\n", monsterName);
-                    int pups = polyRan();
-                    int pupDamage;
-                    for(int i = 0; i < pups; i++){
-                        pupDamage = mob.attackDamage(2, 7);
-                        System.out.printf("A pup bites you for %d damage!\n", pupDamage);
-                        setOverkill(player.takeHealth(pupDamage));
-                    }
-                    setBigHit(false);
-                    System.out.printf("\n\n");
-            }
-        }
-        //If interrupted, cancel attack and big hit.
-        if((isInterrupt == true)&&(mob.getHealth() > 0)){
-            System.out.printf("%s could not attack.\n\n\n", monsterName);
-            setIsInterrupt(false);
-            setBigHit(false);
-        }
-        //If polymorphed, do not allow to hit.
-        if((poly > 0)&&(mob.getHealth() > 0)){
-            System.out.printf("%s was polymorphed and could not attack. Baaa!\n\n\n", monsterName);
-            setPoly(poly - 1);
-        }
-        //If player is iceblocked, enemy will not attack.
-        if(playerStatus == Status.ICEBLOCK){
-            System.out.printf("%s tried to attack you, but you were protected in ice.\n\n\n", monsterName);
-        }
-    }//End monsterWillAttack
-    
-    private void shadikithSkills(){
-        int skillMonsterDamage;
-        int monsterCD = getCD();
-        int poly = getPoly();
-        boolean bigHit = getBigHit();
-        boolean channelingHit = getChannelingHit();
-        boolean isInterrupt = getIsInterrupt();
-        String monsterName = mob.getName();
-        
-        if(monsterCD > 0){
-            setMonsterCD(monsterCD - 1);
-        }
-        if((poly <= 0)&&(mob.getHealth() > 0)&&((playerStatus == Status.ABLE)||(playerStatus == Status.CASTING))){
-            if(channelingHit == false){
-                setBigHit(bigAttack());//Checking for value.
-                bigHit = getBigHit();
-            }
-            
-            if(isInterrupt == false){
-                skillMonsterDamage = mob.getDamage();
-                System.out.printf("%s bites you for %d damage!\n\n\n", monsterName, skillMonsterDamage);
-                setOverkill(player.takeHealth(skillMonsterDamage));
-            }
-            if(isInterrupt == true){
-                System.out.printf("%s could not attack.\n\n\n", monsterName);
-                setIsInterrupt(false);
-            }
-            if((channelingHit == true)&&(monsterCD == 0)){
-                System.out.printf("You are no longer silenced!\n\n\n");
-                setChannelingHit(false);
-                setBigHit(false);
-            }
-            //Big Attack
-            if(bigHit == true){
-                System.out.printf("%s shrieks at you, silencing you, making you unable to cast spells!\n\n\n", monsterName);
-                    setChannelingHit(true);
-                    setBigHit(false);
-                    setMonsterCD(5);
-            }
-        }
-        //If polymorphed, do not allow to hit.
-        if((poly > 0)&&(mob.getHealth() > 0)){
-            System.out.printf("%s was polymorphed and could not attack. Baaa!\n\n\n", monsterName);
-            setPoly(poly - 1);
-        }
-        //If player is iceblocked, do not hit.
-        if(playerStatus == Status.ICEBLOCK){
-        System.out.printf("%s tried to attack you, but you were protected in ice.\n\n\n", monsterName);
-        }
-    }//End of ghostSkills
-    
-    private boolean bigAttack(){
-        Random gen = new Random();
-        boolean isBig = false;
-        int hitChance = (gen.nextInt(100) + 1);
-        if(hitChance <=80){
-            isBig = false;
-        }
-        if(hitChance > 80){
-            isBig = true;
-        }
-        return isBig;
-    }//End bigAttack
     
     public void endBattle(){
         String endMonsterName = mob.getName();
@@ -732,4 +379,32 @@ public class Combat{
             }
         }
     }//end endBattle
+    
+    private void findEnemy(){
+        if(this.playerCoords == 2){
+            this.mob = new Ghost();
+        }
+        else if(this.playerCoords == 3){
+            this.mob = new Attumen();
+        }
+        else if((this.playerCoords == 8)||(this.playerCoords == 10)){
+            this.mob = new SpectralGhost();
+        }
+        else if((this.playerCoords == 16)||(this.playerCoords == 21)||(this.playerCoords == 22)){
+            this.mob = new Spider();
+        }
+        else if((this.playerCoords == 26)||(this.playerCoords == 30)){
+            this.mob = new Hound();
+        }
+        else if(this.playerCoords == 27){
+            this.mob = new Shadikith();
+        }
+        else if(this.playerCoords == 34){
+            this.mob = new ServantSpecter();
+        }
+        else{
+            this.mob = new Ghost();
+        }
+        
+    }//end findEnemy
 }

@@ -48,7 +48,7 @@ public abstract class CharTemplate{
     }
     
     public int getDamage(){
-        return attackDamage(this.getDamageMin(), this.getDamageMax());
+        return attackDamage(this.damageMin, this.damageMax);
     }
     
     public String getName(){
@@ -73,11 +73,11 @@ public abstract class CharTemplate{
     }//End setManaMax
     
     public void setDamageMin(int min){
-        this.health = min;
+        this.damageMin = min;
     }//End setDamageMin
     
     public void setDamageMax(int max){
-        this.health = max;
+        this.damageMax = max;
     }//End setDamageMax
     
     public void setDamage(int newMin, int newMax){

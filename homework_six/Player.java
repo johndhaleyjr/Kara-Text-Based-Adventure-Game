@@ -26,13 +26,13 @@ public class Player extends CharTemplate{
     
     public Player(String name){
         super();
-        setName(name);
-        setHealthMax(250);
-        setHealth(250);
-        setManaMax(300);
-        setMana(300);
-        setDamageMin(10);
-        setDamageMax(50);
+        this.setName(name);
+        this.setHealthMax(250);
+        this.setHealth(250);
+        this.setManaMax(300);
+        this.setMana(300);
+        this.setDamageMin(10);
+        this.setDamageMax(50);
         this.coords = 0;
         this.exp = 0;
         this.level = 1;
@@ -41,7 +41,6 @@ public class Player extends CharTemplate{
         this.evoCD = 0;
         this.mySpells = new Spellbook();
         this.weaponName = "Wand";
-        
     }//end Constructor
     
     //Start of gets:

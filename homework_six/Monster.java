@@ -8,14 +8,23 @@
 **/
 import java.util.Random;
 
-public class Monster extends CharTemplate{
+public abstract class Monster extends CharTemplate{
     private int skillLine;
     private int monsterID;
+    private int skillMonsterDamage;
+    private int monsterCD;
+    private int poly;
+    private boolean isInterrupt;
+    private boolean specialAttack;
+    private boolean channelingSpecial;
+    private Random gen;
+    
     private int[] monsterStats = new int[3];
     
-    public Monster(int playerCoords){
+    public Monster(){
         super();
-        findEnemy(playerCoords);
+        this.gen = new Random();
+        setName("Target Dummy");
     }//End constructor
     
     //Start of getters
@@ -24,98 +33,100 @@ public class Monster extends CharTemplate{
         return this.skillLine;
     }//End getSkillLine
     
+    public int getMonsterCD(){
+        return this.monsterCD;
+    }//End getMonsterCD
+    
+    public int getSkillMonsterDamage(){
+        return this.skillMonsterDamage;
+    }//End getSkillMonsterDamage
+    
+    public int getMonsterID(){
+        return this.monsterID;
+    }//End getMonsterID
+    
+    public int getPoly(){
+        return this.poly;
+    }//End getPoly
+    
+    public boolean getIsInterrupt(){
+        return this.isInterrupt;    
+    }//End getIsInterrupt
+    
+    public boolean getSpecialAttack(){
+        return this.specialAttack;
+    }//End getSpecialAttack
+    
+    public boolean getChannelingSpecial(){
+        return this.channelingSpecial;
+    }//End getChannelingSpecial
+    
+    
     public int[] sendMonsterStats(){
         monsterStats[0] = this.getHealth();
         monsterStats[1] = this.getHealthMax();
         monsterStats[2] = this.getSkillLine();
         return monsterStats;
     }//End sendMonsterStats
-
+    
     //End of getters
-
+    public void setSkillLine(int skillLine){
+        this.skillLine = skillLine;
+    }//End setSkillLine
     
-    private void findEnemy(int playerCoords){
-        if(playerCoords == 2){
-            this.monsterID = 0;
-            this.setHealthMax(200);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(10, 30);
-            this.skillLine = 0;
-        }
-        else if(playerCoords == 3){
-            this.monsterID = 1;
-            this.setHealthMax(400);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(20, 40);
-            this.skillLine = 100;
-        }
-        else if((playerCoords == 8)||(playerCoords == 10)){
-            this.monsterID = 2;
-            this.setHealthMax(250);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(15, 30);
-            this.skillLine = 0;
-        }
-        else if((playerCoords == 16)||(playerCoords == 21)||(playerCoords == 22)){
-            this.monsterID = 3;
-            this.setHealthMax(250);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(15, 32);
-            this.skillLine = 1;
-        }
-        else if((playerCoords == 26)||(playerCoords == 30)){
-            this.monsterID = 4;
-            this.setHealthMax(300);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(20, 35);
-            this.skillLine = 2;
-        }
-        else if(playerCoords == 27){
-            this.monsterID = 5;
-            this.setHealthMax(450);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(30, 50);
-            this.skillLine = 101;
-        }
-        else if(playerCoords == 34){
-            this.monsterID = 6;
-            this.setHealthMax(1500);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(25, 75);
-            this.skillLine = 1;
-        }
-        else{
-            this.monsterID = 6;
-            this.setHealthMax(1500);
-            this.setHealth(this.getHealthMax());
-            this.setDamage(25, 75);
-            this.skillLine = 1;
-        }
-        findEnemyName(this.monsterID);
-    }//end findEnemy
+    public void setPoly(){
+        this.poly = this.polyRan();
+    }//End setPoly
     
-    private void findEnemyName(int monsterID){
-        if(monsterID == 0){
-            this.setName("Spectral Ghost");
+    public void setPoly(int poly){
+        this.poly = poly;
+    }//End setPoly(int)
+    
+    public void setMonsterCD(int monsterCD){
+        this.monsterCD = monsterCD;
+    }//End setMonsterCD
+    
+    public void setMonsterID(int monsterID){
+        this.monsterID = monsterID;
+    }//End setMonsterID
+    
+    public void setSkillMonsterDamage(int skillMonsterDamage){
+        this.skillMonsterDamage = skillMonsterDamage;
+    }//End setSkillMonsterDamage
+    
+    public void setIsInterrupt(boolean isInterrupt){
+        this.isInterrupt = isInterrupt;
+    }//End setIsInterrupt
+    
+    public void setSpecialAttack(boolean specialAttack){
+        this.specialAttack = specialAttack;
+    }//End setSpecialAttack
+    
+    public void setChannelingSpecial(boolean channelingSpecial){
+        this.channelingSpecial = channelingSpecial;
+    }//End setChannelingSpecial
+    
+    //End of setters
+    
+    public abstract int attack(Status playerStatus);
+    
+    public int polyRan(){
+        int polyCount = this.gen.nextInt(3);
+        return(polyCount + 1);
+    }//end of polyRan;
+    
+    public boolean bigAttack(){
+        Random gen = new Random();
+        boolean isBig = false;
+        int hitChance = (gen.nextInt(100) + 1);
+        if(hitChance <=80){
+            isBig = false;
         }
-        if(monsterID == 1){
-            this.setName("Attumen the Huntsman");
+        if(hitChance > 80){
+            isBig = true;
         }
-        if(monsterID == 2){
-            this.setName("Ghost");
-        }
-        if(monsterID == 3){
-            this.setName("Spider");
-        }
-        if(monsterID == 4){
-            this.setName("Hound");
-        }
-        if(monsterID == 5){
-            this.setName("Shadikith the Glider");
-        }
-        if(monsterID == 6){
-            this.setName("Servant Specter");
-        }
-    }//end findEnemyName;
+        return isBig;
+    }//End bigAttack
+    
 
 }//End class

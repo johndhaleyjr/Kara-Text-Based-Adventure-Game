@@ -7,6 +7,7 @@
  * Class: Room
 **/
 import java.util.Scanner;
+import java.util.InputMismatchException;
 
 public class Treasure{
     private boolean isTaken = false;
@@ -58,20 +59,32 @@ public class Treasure{
     
     //Get treasure item Hand Wraps
     public void getHandWraps(){
-        System.out.println("\nBehind Attumen you find some nice handwraps. Would you like to put them on? <y>/<n>:\n");
+        char choiceChar;
         Scanner input = new Scanner(System.in);
-        String readString = input.nextLine();
-        char choiceChar = readString.charAt(0);
-        System.out.println();
-        if(choiceChar == 'y'){
-            map.endEvent(player.getCoords(), 1);
-            player.addSpellEffect(5);
-            System.out.printf("You put on the wraps, and you feel your power enhance!\n\n");
-            
-        }
-        if(choiceChar == 'n'){
-            System.out.printf("You can come pick these up later.\n\n");
-        }
+        do{
+            try{
+                System.out.println("\nBehind Attumen you find some nice handwraps. Would you like to put them on? <y>/<n>:\n");
+                String readString = input.nextLine();
+                choiceChar = readString.charAt(0);
+                System.out.println();
+                
+                if(choiceChar == 'y'){
+                    map.endEvent(player.getCoords(), 1);
+                    player.addSpellEffect(5);
+                    System.out.printf("You put on the wraps, and you feel your power enhance!\n\n");
+                    
+                }
+                else if(choiceChar == 'n'){
+                    System.out.printf("You can come pick these up later.\n\n");
+                }
+            }catch(InputMismatchException e){
+                System.out.println();
+                System.out.println("That was not a command!");
+                System.out.println();
+                input.nextLine();
+                choiceChar = 'e';
+            }
+        }while((choiceChar != 'n')||(choiceChar != 'y'));
     }//End getHandWraps
     
     //Get treasure item Dazzling Wand

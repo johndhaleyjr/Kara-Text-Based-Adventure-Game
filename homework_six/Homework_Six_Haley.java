@@ -3,6 +3,10 @@
  * Explore the fel-corrupted tower of Karazhan, battling monsters
  * and pwoering up your spells with new books, weapons, and gear.
  * 
+ * TODO:
+ *      Add implementation of attack.
+ *      Add new classes for every monster.
+ * 
  * Author: John Haley
  * Last Revised: 20 July 2016
  * Assignment: Homework Six
@@ -10,8 +14,10 @@
 **/
 import java.util.Random;
 import java.util.Scanner;
+
+import java.util.InputMismatchException;
  
- public class Homework_Six_Haley{
+public class Homework_Six_Haley{
     private static char north = 'n';
     private static char south = 's';
     private static char east = 'e';
@@ -76,44 +82,48 @@ import java.util.Scanner;
         int choice = 0;
         System.out.printf("\n\n");
         
-        
         while((loopStatus == true)||(player.getHealth() > 0)) {
-            combat.checkStatus();
-            //Change loop status
-            loopStatus = combat.getIsWin();
-            
-            //Print health and mana
-            combat.printStats();
-            
-            //Prints info to choose attack.
-            combat.printMenu();
-            
-            //Grab choice from player
-            choice = input.nextInt();
-            
-            //Give player the choices and enacts them
-            combat.menuExecute(choice);
-            //Check for the skills of the monster while setting monsterCD.
-            combat.skillLineCheck();//Monster attacks
-            
-            combat.spellChecker();//Depending on player status, does what it needs.
-            combat.checkStatus();//Recheck to help end loop.
-            loopStatus = combat.getIsWin();//Recheck to help end loop.
-            player = combat.updatePlayer();
-            //If evoCD is over 0, increment one down.
-            if(combat.getEvoCD() > 0){
-                combat.setEvoCD(combat.getEvoCD() - 1);
-            }
-            if(combat.getIRan() == true){
-                combat.setIRan(false);
-                player.setCoords(oldCoords);
-                break;
-            }
-            if(combat.getStatus() == Status.VICTORY){
-                break;
-            }
-            if(combat.getStatus() == Status.DEFEAT){
-                break;
+            try{
+                combat.checkStatus();
+                //Change loop status
+                loopStatus = combat.getIsWin();
+                
+                //Print health and mana
+                combat.printStats();
+                
+                //Prints info to choose attack.
+                combat.printMenu();
+                
+                //Grab choice from player
+                choice = input.nextInt();
+                //Give player the choices and enacts them
+                combat.menuExecute(choice);
+                //Allows monster to hit.
+                combat.monsterHit();
+                
+                combat.spellChecker();//Depending on player status, does what it needs.
+                combat.checkStatus();//Recheck to help end loop.
+                loopStatus = combat.getIsWin();//Recheck to help end loop.
+                player = combat.updatePlayer();
+                //If evoCD is over 0, increment one down.
+                if(combat.getEvoCD() > 0){
+                    combat.setEvoCD(combat.getEvoCD() - 1);
+                }
+                if(combat.getIRan() == true){
+                    combat.setIRan(false);
+                    player.setCoords(oldCoords);
+                    break;
+                }
+                if(combat.getStatus() == Status.VICTORY){
+                    break;
+                }
+                if(combat.getStatus() == Status.DEFEAT){
+                    break;
+                }
+            }catch(java.util.InputMismatchException e){
+                System.out.println("That was not a command!");
+                input.nextLine();
+                System.out.println();
             }
         }//End of While
         combat.endBattle();
@@ -147,45 +157,67 @@ import java.util.Scanner;
     }//end readBook
     
     public static void restUp(){
+        char userChar;
         input = new Scanner(System.in);
         System.out.println("You feel oddly refreshed.");
         player.giveHealth(player.getHealthMax());
-        System.out.println("Do you want to set this as your rest zone? <y>/<n>");
-        System.out.println();
-        String readString = input.nextLine();
-        char userChar = readString.charAt(0);
-        if(userChar == 'y'){
-            player.setRestArea(player.getCoords());
-        }else{
-            System.out.println("You can come back later.");
-        }
+        do{ 
+            try{
+                System.out.println("Do you want to set this as your rest zone? <y>/<n>");
+                System.out.println();
+                String readString = input.nextLine();
+                userChar = readString.charAt(0);
+                if(userChar == 'y'){
+                    player.setRestArea(player.getCoords());
+                }else{
+                    System.out.println("You can come back later.");
+                }
+            }catch(InputMismatchException e){
+                System.out.println();
+                System.out.println("That was not a command!");
+                System.out.println();
+                input.nextLine();
+                userChar = 'e';
+            }
+        }while((userChar != 'y')||(userChar != 'n'));
     }//End restUp
     
     public static void upgradeSpell(int userChoice){
-        switch(userChoice){
-            case 1:
-                player.addSpellEffect(3, 30);
-                System.out.println("You feel more in tune with your spells. Frostbolt's damage was increased.");
-                break;
-                
-            case 2:
-                player.addSpellEffect(4, 25);
-                System.out.println("You feel more in tune with your spells. Ice Block's healing was increased.");
-                break;
-                
-            case 3:
-                player.addSpellEffect(5, 20);
-                System.out.println("You feel more in tune with your spells. Ice Lance's damage was increased.");
-                break;
-                
-            case 4:
-                player.addSpellEffect(6, 15);
-                System.out.println("You feel more in tune with your spells. Shatter's damage was increased.");
-                break;
-            default:
-                System.out.println("You can come back another time.");
-                break;
-        }
+        do{
+            try{
+                switch(userChoice){
+                    case 1:
+                        player.addSpellEffect(3, 30);
+                        System.out.println("You feel more in tune with your spells. Frostbolt's damage was increased.");
+                        break;
+                        
+                    case 2:
+                        player.addSpellEffect(4, 25);
+                        System.out.println("You feel more in tune with your spells. Ice Block's healing was increased.");
+                        break;
+                        
+                    case 3:
+                        player.addSpellEffect(5, 20);
+                        System.out.println("You feel more in tune with your spells. Ice Lance's damage was increased.");
+                        break;
+                        
+                    case 4:
+                        player.addSpellEffect(6, 15);
+                        System.out.println("You feel more in tune with your spells. Shatter's damage was increased.");
+                        break;
+                    default:
+                        System.out.println("You can come back another time.");
+                        userChoice = 1;
+                        break;
+                }
+            }catch(InputMismatchException e){
+                        System.out.println();
+                        System.out.println("That was not a command!");
+                        System.out.println();
+                        input.nextLine();
+                        userChoice = -55;
+                    }
+        }while((userChoice > 4)&&(userChoice < 0));
     }//End upgradeSpell
      
     private static void playerMove(){
@@ -201,23 +233,35 @@ import java.util.Scanner;
      
       //Give the backstory, and offer to change directional keys.
     private static String welcomeKB(){
+        boolean kbPicked = false;
         Scanner input = new Scanner(System.in);
         System.out.printf("What is your name?: ");
         String playerName = input.nextLine();
-        System.out.printf("Hello, %s. You are getting this message due to some recent disturbances in \nthe tower of Kharazan. As a student and devotee of the Kirin Tor, \nwe have elected you to receive hands-on training in the tower we're\nsure you've heard lots about.\n\nThe first thing we must ask you\nhowever, is for your choice of directioning.\nWhen moving north, south, east, and west, would you prefer using:\n1.) <n><s><e><w>; or\n2.) <w><s><d><a>?\nPlease choose a number: ", playerName);
-        int choice = input.nextInt();
-        System.out.printf("Your choice will be remembered.\n\n");
-        if(choice == 1){
-            north = 'n';
-            south = 's';
-            east = 'e';
-            west = 'w';
-        }
-        if(choice == 2){
-            north = 'w';
-            south = 's';
-            east = 'd';
-            west = 'a';
+        System.out.printf("Hello, %s. You are getting this message due to some recent disturbances in \nthe tower of Kharazan. As a student and devotee of the Kirin Tor, \nwe have elected you to receive hands-on training in the tower we're\nsure you've heard lots about.\n", playerName);
+        while(kbPicked == false){
+            try{
+                System.out.printf("The first thing we must ask you\nhowever, is for your choice of directioning.\nWhen moving north, south, east, and west, would you prefer using:\n1.) <n><s><e><w>; or\n2.) <w><s><d><a>?\nPlease choose a number: ");
+                int choice = input.nextInt();
+                System.out.printf("Your choice will be remembered.\n\n");
+                if(choice == 1){
+                    north = 'n';
+                    south = 's';
+                    east = 'e';
+                    west = 'w';
+                    kbPicked = true;
+                }
+                if(choice == 2){
+                    north = 'w';
+                    south = 's';
+                    east = 'd';
+                    west = 'a';
+                    kbPicked = true;
+                }
+            }catch(InputMismatchException e){
+                System.out.println("That was not a command!");
+                System.out.println();
+                input.nextLine();
+            }
         }
         return playerName;
     }//End welcomeKB
