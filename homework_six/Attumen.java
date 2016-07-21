@@ -22,7 +22,6 @@ public class Attumen extends Monster{
     @Override
     public int attack(Status playerStatus){
         setSkillMonsterDamage(0);
-        System.out.println(getPoly());
         //If monster HP over 0,
         if(getHealth() > 0){
             //If player is attackable,
